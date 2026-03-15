@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hoop Hopper - Night Sky</title>
+<style>
+  body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
+  canvas { display:block; margin:auto; border:3px solid #333; border-radius:10px; background:black; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Ball
+let ball = { x: 100, y: 300, radius: 20, vy: 0 };
+let gravity = 0.6;
+let jumpStrength = -11;
+
+// Score
+let score = 0;
+
+// Baskets
+const basketWidth = 80;
+const basketHeight = 15;
+const basketCount = 3;
+const basketGap = 300;
+let basketSpeed = 4;
+let baskets = [];
+
+// Stars
+const starCount = 80;
+let stars = [];
+for (let i=0; i<starCount; i++) {
+    stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random()*2 + 1
+    });
+}
+
+// Initialize baskets
+for (let i = 0; i < basketCount; i++) {
+    baskets.push({
+        x: canvas.width + i * basketGap,
+        y: Math.random() * (canvas.height - 200) + 100
+    });
+}
+
+// Controls
+document.addEventListener('keydown', ()=>ball.vy = jumpStrength);
+document.addEventListener('mousedown', ()=>ball.vy = jumpStrength);
+document.addEventListener('touchstart', ()=>ball.vy = jumpStrength);
+
+// Reset game
+function resetGame() {
+    ball.y = 300;
+    ball.vy = 0;
+    score = 0;
+    basketSpeed = 4;
+    baskets = [];
+    for (let i = 0; i < basketCount; i++) {
+        baskets.push({
+            x: canvas.width + i * basketGap,
+            y: Math.random() * (canvas.height - 200) + 100
+        });
+    }
+}
+
+// Update game
+function update() {
+    ball.vy += gravity;
+    ball.y += ball.vy;
+
+    for (let b of baskets) {
+        b.x -= basketSpeed;
+
+        // Score if ball passes basket
+        if (ball.x > b.x + basketWidth) {
+            score++;
+            // Move basket to the right after scoring
+            let maxX = Math.max(...baskets.map(b => b.x));
+            b.x = maxX + basketGap;
+            b.y = Math.random() * (canvas.height - 200) + 100;
+        }
+    }
+
+    // Ball hits top/bottom
+    if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+        resetGame();
+    }
+}
+
+// Draw stars
+function drawStars() {
+    ctx.fillStyle = 'white';
+    for (let s of stars) {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI*2);
+        ctx.fill();
+    }
+}
+
+// Draw ball
+function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+    ctx.fillStyle = 'orange';
+    ctx.fill();
+    ctx.closePath();
+
+    // Basketball seams
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ball.x, ball.y-ball.radius);
+    ctx.lineTo(ball.x, ball.y+ball.radius);
+    ctx.moveTo(ball.x-ball.radius, ball.y);
+    ctx.lineTo(ball.x+ball.radius, ball.y);
+    ctx.moveTo(ball.x-ball.radius*0.7, ball.y-ball.radius*0.7);
+    ctx.quadraticCurveTo(ball.x, ball.y, ball.x+ball.radius*0.7, ball.y+ball.radius*0.7);
+    ctx.moveTo(ball.x-ball.radius*0.7, ball.y+ball.radius*0.7);
+    ctx.quadraticCurveTo(ball.x, ball.y, ball.x+ball.radius*0.7, ball.y-ball.radius*0.7);
+    ctx.stroke();
+}
+
+// Draw baskets
+function drawBaskets() {
+    ctx.fillStyle = 'orange';
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 3;
+    for (let b of baskets) {
+        ctx.fillRect(b.x, b.y, basketWidth, basketHeight);
+        ctx.strokeRect(b.x, b.y, basketWidth, basketHeight);
+    }
+}
+
+// Draw everything
+function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Draw night sky
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawStars();
+    drawBaskets();
+    drawBall();
+    ctx.fillStyle = '#fff';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('Score: ' + score, 10, 35);
+}
+
+// Game loop
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
